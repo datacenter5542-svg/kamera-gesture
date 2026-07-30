@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temukan Perasaanku</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      padding: 15px;
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 1.5rem;
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      max-width: 480px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    p.subtitle {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 1.2rem;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #020617;
+      aspect-ratio: 3 / 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .overlay-result {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform: scale(0.85);
+      z-index: 10;
+      border-radius: 20px;
+    }
+
+    .overlay-result.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .heart-badge {
+      width: 90px;
+      height: 90px;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      box-shadow: 0 0 35px rgba(255, 65, 108, 0.7);
+      animation: heartbeat 1.2s infinite ease-in-out;
+    }
+
+    .love-text {
+      margin-top: 1rem;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffffff 0%, #f43f5e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.15); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.15); }
+      70% { transform: scale(1); }
+    }
+
+    .status-badge {
+      margin-top: 1.2rem;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #38bdf8;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .btn {
+      margin-top: 12px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Temukan Perasaanku</h1>
+    <p class="subtitle">Temukan Perasaanku</p>
+
+    <div class="video-wrapper">
+      <video id="webcam" autoplay playsinline muted></video>
+      
+      <div id="overlay" class="overlay-result">
+        <div class="heart-badge">❤️</div>
+        <div class="love-text">I LOVE YOU</div>
+      </div>
+    </div>
+
+    <button id="startBtn" class="btn" onclick="startCamera()">Mulai Kamera 📷</button>
+    <div id="status" class="status-badge">Klik "Mulai Kamera" di atas</div>
+  </div>
+
+  <script>
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI JIKA INGIN SIMPAN DATA KE SPREADSHEET
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby2RFWbJn9ST1UezncyJ3pmAou-f1M7r8dsLV598ZMRornTluHX5YUlfJRWefS944myxA/exec";
+
+    const video = document.getElementById('webcam');
+    const overlay = document.getElementById('overlay');
+    const statusText = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+
+    let isCooldown = false;
+
+    function dist(p1, p2) {
+      return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    }
+
+    function checkPeaceSign(landmarks) {
+      const wrist = landmarks[0];
+      const indexOpen = dist(landmarks[8], wrist) > dist(landmarks[6], wrist);
+      const middleOpen = dist(landmarks[12], wrist) > dist(landmarks[10], wrist);
+      const ringClosed = dist(landmarks[16], wrist) < dist(landmarks[14], wrist);
+      const pinkyClosed = dist(landmarks[20], wrist) < dist(landmarks[18], wrist);
+
+      return indexOpen && middleOpen && ringClosed && pinkyClosed;
+    }
+
+    // Fungsi Opsional: Kirim Log ke Google Sheets via Apps Script
+    function logToAppsScript() {
+      if (!GAS_URL || GAS_URL.includes("URL_WEB_APP")) return;
+      if (isCooldown) return;
+
+      isCooldown = true;
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gesture: "Temukan Perasaanku", time: new Date().toLocaleString() })
+      }).finally(() => {
+        setTimeout(() => { isCooldown = false; }, 5000); // Cooldown 5 detik
+      });
+    }
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    hands.onResults((results) => {
+      let isPeace = false;
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        if (checkPeaceSign(results.multiHandLandmarks[0])) {
+          isPeace = true;
+        }
+      }
+
+      if (isPeace) {
+        overlay.classList.add('active');
+        statusText.innerText = " Terdeteksi! ";
+        statusText.style.color = "#4ade80";
+        logToAppsScript();
+      } else {
+        overlay.classList.remove('active');
+        statusText.innerText = "Kamera Aktif - Temukan Perasaanku ";
+        statusText.style.color = "#38bdf8";
+      }
+    });
+
+    async function startCamera() {
+      startBtn.style.display = "none";
+      statusText.innerText = "Meminta izin kamera...";
+
+      try {
+        const camera = new Camera(video, {
+          onFrame: async () => { await hands.send({ image: video }); },
+          width: 640,
+          height: 480
+        });
+        await camera.start();
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = "Gagal Mengakses Kamera: " + err.message;
+        statusText.style.color = "#f87171";
+        startBtn.style.display = "inline-block";
+      }
+    }
+  </script>
+</body>
+</html>
