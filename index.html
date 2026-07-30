@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gesture Recognition - Love & Peace</title>
+  <title>Temukan Perasaanku</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   
   <!-- MediaPipe Library -->
@@ -155,8 +155,8 @@
 <body>
 
   <div class="container">
-    <h1>Gesture Recognition</h1>
-    <p class="subtitle">Tunjukkan gestur ✌️ (Peace / 2 Jari)</p>
+    <h1>Temukan Perasaanku</h1>
+    <p class="subtitle">Temukan Perasaanku</p>
 
     <div class="video-wrapper">
       <video id="webcam" autoplay playsinline muted></video>
@@ -206,7 +206,7 @@
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gesture: "Peace ✌️", time: new Date().toLocaleString() })
+        body: JSON.stringify({ gesture: "Temukan Perasaanku", time: new Date().toLocaleString() })
       }).finally(() => {
         setTimeout(() => { isCooldown = false; }, 5000); // Cooldown 5 detik
       });
@@ -233,12 +233,12 @@
 
       if (isPeace) {
         overlay.classList.add('active');
-        statusText.innerText = "Gestur ✌️ Terdeteksi! ❤️";
+        statusText.innerText = " Terdeteksi! ";
         statusText.style.color = "#4ade80";
         logToAppsScript();
       } else {
         overlay.classList.remove('active');
-        statusText.innerText = "Kamera Aktif - Tunjukkan gestur ✌️";
+        statusText.innerText = "Kamera Aktif - Temukan Perasaanku ";
         statusText.style.color = "#38bdf8";
       }
     });
